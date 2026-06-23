@@ -27,103 +27,14 @@ def baidu_document_analysis(image_base64):
     access_token = get_baidu_access_token()
     if not access_token:
         return {"error": "无法获取API令牌"}
-    url = f"https://aip.baidubce.com/rest/2.0/ocr/v1/doc_analysis?access_token={access_token}"
+    url = f"https://aip.baidubce.com/rest/2.0/ocr/v1/general_basic?access_token={access_token}"
     headers = {"Content-Type": "application/x-www-form-urlencoded"}
-    data = {
-        "image": image_base64,
-        "language_type": "CHN_ENG",
-        "detect_direction": "true",
-    }
+    data = {"image": image_base64, "language_type": "CHN_ENG", "detect_direction": "true"}
     try:
         response = requests.post(url, headers=headers, data=data, timeout=30)
         return response.json()
     except Exception as e:
         return {"error": str(e)}
-
-
-def baidu_layout_analysis(image_base64):
-    access_token = get_baidu_access_token()
-    if not access_token:
-        return {"error": "无法获取API令牌"}
-    url = f"https://aip.baidubce.com/rest/2.0/ocr/v1/layout_analysis?access_token={access_token}"
-    headers = {"Content-Type": "application/x-www-form-urlencoded"}
-    data = {"image": image_base64}
-    try:
-        response = requests.post(url, headers=headers, data=data, timeout=30)
-        return response.json()
-    except Exception as e:
-        return {"error": str(e)}
-
-
-def baidu_table_ocr(image_base64):
-    access_token = get_baidu_access_token()
-    if not access_token:
-        return {"error": "无法获取API令牌"}
-    url = f"https://aip.baidubce.com/rest/2.0/ocr/v1/table?access_token={access_token}"
-    headers = {"Content-Type": "application/x-www-form-urlencoded"}
-    data = {"image": image_base64}
-    try:
-        response = requests.post(url, headers=headers, data=data, timeout=30)
-        return response.json()
-    except Exception as e:
-        return {"error": str(e)}
-
-
-# ========== 文档提取函数 ==========
-def extract_text_from_pdf(file_path):
-    try:
-        import PyPDF2
-        text = ""
-        with open(file_path, 'rb') as f:
-            reader = PyPDF2.PdfReader(f)
-            for page in reader.pages:
-                text += page.extract_text() + "\n"
-        return text, None
-    except ImportError:
-        return None, "请安装 PyPDF2: pip install PyPDF2"
-    except Exception as e:
-        return None, f"PDF解析失败: {str(e)}"
-
-
-def extract_text_from_docx(file_path):
-    try:
-        import docx
-        doc = docx.Document(file_path)
-        text = "\n".join([para.text for para in doc.paragraphs])
-        return text, None
-    except ImportError:
-        return None, "请安装 python-docx: pip install python-docx"
-    except Exception as e:
-        return None, f"DOCX解析失败: {str(e)}"
-
-
-def extract_text_from_txt(file_path):
-    try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            return f.read(), None
-    except UnicodeDecodeError:
-        try:
-            with open(file_path, 'r', encoding='gbk') as f:
-                return f.read(), None
-        except Exception as e:
-            return None, f"TXT解析失败: {str(e)}"
-
-
-def extract_text_from_doc(file_path):
-    try:
-        with open(file_path, 'rb') as f:
-            content = f.read()
-            try:
-                text = content.decode('utf-8', errors='ignore')
-                import re
-                text = re.sub(r'[^\u4e00-\u9fa5a-zA-Z0-9\s\.,;:!?\'"()\-\n]', '', text)
-                if len(text.strip()) > 50:
-                    return text, None
-            except:
-                pass
-        return None, "DOC文件需要转换为DOCX格式"
-    except Exception as e:
-        return None, f"DOC解析失败: {str(e)}"
 
 
 # ========== 数据 ==========
@@ -131,23 +42,16 @@ MINDMAP_DATA = {
     "智能文档解析APP": {
         "children": {
             "📱 身份认证": {"children": {"🔐 登录": {}, "📝 注册": {}, "🔑 密码找回": {}, "👤 个人中心": {}}},
-            "📄 文档解析": {
-                "children": {
-                    "📋 全文识别": {},
-                    "📊 表格提取": {},
-                    "📐 版面分析": {},
-                    "📝 层级结构": {}
-                }
-            },
-            "🧠 AI能力": {"children": {"🤖 百度文档解析API": {}, "📈 解析准确率90%+": {}, "⚡ 智能版面分析": {}, "📱 多格式支持": {}}},
-            "📊 历史记录": {"children": {"📋 解析记录": {}, "📈 统计图表": {}, "🗑️ 清除记录": {}}},
+            "📷 OCR识别": {"children": {"📄 通用识别": {}, "🎯 高精度识别": {}, "📊 表格识别": {}, "🌐 多语言识别": {}}},
+            "🧠 AI能力": {"children": {"🤖 百度OCR API": {}, "📈 识别准确率90%+": {}, "⚡ 实时识别": {}, "📱 多格式支持": {}}},
+            "📊 历史记录": {"children": {"📋 识别记录": {}, "📈 统计图表": {}, "🗑️ 清除记录": {}}},
             "⚙️ 设置": {"children": {"🌓 主题切换": {}, "🔔 通知设置": {}, "📖 使用帮助": {}, "ℹ️ 关于我们": {}}}
         }
     }
 }
 
 users_db = {"admin": {"password": "123456", "nickname": "管理员"}}
-parse_history = []  # 全局历史记录列表
+parse_history = []
 
 # ========== 颜色 ==========
 BLUE = "#1565C0"
@@ -169,13 +73,12 @@ app = {
     "page": None,
     "user": None,
     "container": None,
-    "mode": "文档解析",
-    "file_data": None,
+    "mode": "通用识别",
+    "image_data": None,
     "file_name": None,
-    "file_type": None,
     "result_text": None,
     "result_display": None,
-    "file_display": None,
+    "image_display": None,
     "home": None,
     "parse": None,
     "history": None,
@@ -184,12 +87,9 @@ app = {
     "nav_buttons": [],
     "nav_icons": [],
     "nav_labels": [],
-    "history_view": None,
-    "profile_view": None,
 }
 
 
-# ========== 思维导图弹窗 ==========
 def show_mindmap_dialog(page):
     def build_node(title, children=None, level=0):
         children = children or {}
@@ -247,23 +147,36 @@ def show_mindmap_dialog(page):
     page.update()
 
 
-# ========== 首页 ==========
+def refresh_all_pages(page):
+    if app["home"]:
+        app["home"] = home_page(page)
+    if app["history"]:
+        app["history"] = history_page(page)
+    if app["profile"]:
+        app["profile"] = profile_page(page)
+    if app["container"]:
+        current = app["container"].content
+        if current == app["home"]:
+            app["container"].content = app["home"]
+        elif current == app["history"]:
+            app["container"].content = app["history"]
+        elif current == app["profile"]:
+            app["container"].content = app["profile"]
+        page.update()
+
+
 def home_page(page):
     def go_parse(e):
         switch_tab(page, 1)
-
     def go_history(e):
         switch_tab(page, 2)
-
     def go_profile(e):
         switch_tab(page, 3)
-
     def go_settings(e):
         switch_tab(page, 4)
 
     total_count = len(parse_history)
     total_words = sum(h.get("count", 0) for h in parse_history)
-
     last = parse_history[-1] if parse_history else None
 
     return ft.Container(
@@ -274,33 +187,33 @@ def home_page(page):
             ft.Divider(height=16),
             ft.Row([
                 _stat_card("📄", "解析次数", str(total_count), BLUE),
-                _stat_card("📝", "提取元素", str(total_words), GREEN),
-                _stat_card("📊", "支持格式", "6种", ORANGE),
+                _stat_card("📝", "提取字数", str(total_words), GREEN),
+                _stat_card("📊", "支持格式", "图片", ORANGE),
             ], alignment=ft.MainAxisAlignment.SPACE_EVENLY),
             ft.Divider(height=12),
             ft.Text("⚡ 快捷入口", size=16, weight=ft.FontWeight.BOLD),
             ft.Row([
-                _card("📄", "文档解析", BLUE, go_parse),
+                _card("📷", "OCR识别", BLUE, go_parse),
                 _card("🧠", "思维导图", PURPLE, lambda e: show_mindmap_dialog(page)),
                 _card("📊", "历史记录", GREEN, go_history),
                 _card("⚙️", "设置", ORANGE, go_settings),
             ], alignment=ft.MainAxisAlignment.SPACE_EVENLY),
             ft.Divider(height=12),
-            ft.Text("📋 最近解析", size=16, weight=ft.FontWeight.BOLD),
+            ft.Text("📋 最近识别", size=16, weight=ft.FontWeight.BOLD),
             ft.Container(
                 content=ft.Column([
                     ft.Text(f"🕐 {last['time']}", size=12, color=GREY_600) if last else ft.Text("暂无记录"),
-                    ft.Text(f"📄 {last['type']} | {last['count']} 个元素" if last else "去文档解析页面试试吧！", size=13),
+                    ft.Text(f"📄 {last['type']} | {last['count']} 个字" if last else "去OCR页面试试吧！", size=13),
                 ], spacing=4),
                 padding=ft.padding.all(12), bgcolor=WHITE, border_radius=8
-            ) if last else ft.Text("暂无解析记录", color=GREY_400),
+            ) if last else ft.Text("暂无识别记录", color=GREY_400),
             ft.Container(
                 content=ft.Column([
                     ft.Text("🚀 核心功能", size=16, weight=ft.FontWeight.BOLD),
-                    ft.Text("• 智能文档解析 - 提取文本内容", size=13),
-                    ft.Text("• 表格提取 - 识别表格结构", size=13),
-                    ft.Text("• 版面分析 - 区分文本/表格/图片", size=13),
-                    ft.Text("• 支持 PDF / DOC / DOCX / TXT / PNG / JPG", size=13),
+                    ft.Text("• 通用/高精度OCR文字识别", size=13),
+                    ft.Text("• 基于百度AI PaddleOCR", size=13),
+                    ft.Text("• 识别准确率90%以上", size=13),
+                    ft.Text("• 支持 PNG / JPG / BMP 图片", size=13),
                 ], spacing=4),
                 padding=ft.padding.all(12), bgcolor=WHITE, border_radius=8
             ),
@@ -333,43 +246,21 @@ def _card(icon, title, color, on_click):
     )
 
 
-# ========== 刷新所有页面 ==========
-def refresh_all_pages(page):
-    """刷新所有页面以更新数据"""
-    if app["home"]:
-        app["home"] = home_page(page)
-    if app["history"]:
-        app["history"] = history_page(page)
-    if app["profile"]:
-        app["profile"] = profile_page(page)
-    # 更新当前显示的页面
-    if app["container"]:
-        current_content = app["container"].content
-        if current_content == app["home"]:
-            app["container"].content = app["home"]
-        elif current_content == app["history"]:
-            app["container"].content = app["history"]
-        elif current_content == app["profile"]:
-            app["container"].content = app["profile"]
-        page.update()
-
-
-# ========== 文档解析页面 ==========
+# ========== OCR页面 ==========
 def parse_page(page):
-    app["file_display"] = ft.Container(
+    app["image_display"] = ft.Container(
         content=ft.Column([
-            ft.Text("📄", size=50),
-            ft.Text("上传文档进行解析", size=12, color=GREY_500),
-            ft.Text("支持 PDF / DOC / DOCX / TXT / PNG / JPG", size=10, color=GREY_400),
+            ft.Text("🖼", size=50),
+            ft.Text("上传图片进行识别", size=12, color=GREY_500),
+            ft.Text("支持 PNG / JPG / BMP", size=10, color=GREY_400),
         ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=4),
         width=340, height=160, bgcolor=GREY_100, border_radius=12
     )
 
-    # 结果区域 - 使用可滚动的容器
-    app["result_text"] = ft.Text("解析结果将显示在这里...", size=13, color=GREY_600)
+    app["result_text"] = ft.Text("识别结果将显示在这里...", size=13, color=GREY_600)
     app["result_display"] = ft.Container(
         content=ft.Column([
-            ft.Text("📝 解析结果", size=14, weight=ft.FontWeight.BOLD),
+            ft.Text("📝 识别结果", size=14, weight=ft.FontWeight.BOLD),
             ft.Divider(height=2),
             ft.Container(
                 content=app["result_text"],
@@ -379,23 +270,20 @@ def parse_page(page):
         padding=12,
         bgcolor=WHITE,
         border_radius=8,
-        height=250,  # 固定高度
+        height=250,
         width=340,
     )
 
-    parse_mode = ft.Text("当前: 文档解析", size=14)
-    mode_value = "文档解析"
+    mode_text = ft.Text("当前: 通用识别", size=14)
+    mode_value = "通用"
 
     def toggle_mode(e):
         nonlocal mode_value
-        modes = ["文档解析", "表格提取", "版面分析"]
-        current = modes.index(mode_value)
-        next_idx = (current + 1) % len(modes)
-        mode_value = modes[next_idx]
-        parse_mode.value = f"当前: {mode_value}"
+        mode_value = "高精度" if mode_value == "通用" else "通用"
+        mode_text.value = f"当前: {mode_value}识别"
         page.update()
 
-    def pick_file(e):
+    def pick_image(e):
         def on_result(e):
             if e.files:
                 try:
@@ -404,104 +292,20 @@ def parse_page(page):
                     file_ext = os.path.splitext(file_name)[1].lower()
 
                     app["file_name"] = file_name
-                    app["file_type"] = file_ext
 
                     if file_ext in ['.png', '.jpg', '.jpeg', '.bmp']:
                         with open(file_path, "rb") as f:
-                            app["file_data"] = base64.b64encode(f.read()).decode()
-                        app["file_display"].content = ft.Column([
-                            ft.Text("🖼", size=50),
+                            app["image_data"] = base64.b64encode(f.read()).decode()
+                        app["image_display"].content = ft.Column([
+                            ft.Text("✅", size=50),
                             ft.Text(f"已选择: {file_name}", size=12, color=GREEN),
-                            ft.Text("点击开始解析", size=11, color=GREY_500)
+                            ft.Text("点击开始识别", size=11, color=GREY_500)
                         ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=4)
                         app["result_text"].value = f"📷 图片已加载: {file_name}"
                         page.update()
-                        return
-
-                    elif file_ext == '.pdf':
-                        text, error = extract_text_from_pdf(file_path)
-                        if error:
-                            app["result_text"].value = f"❌ {error}"
-                            page.update()
-                            return
-                        app["file_data"] = text
-                        preview = text[:200] + "..." if len(text) > 200 else text
-                        app["file_display"].content = ft.Column([
-                            ft.Text("📕", size=50),
-                            ft.Text(f"已选择: {file_name}", size=12, color=GREEN),
-                            ft.Text(f"预览: {preview}", size=11, color=GREY_500)
-                        ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=4)
-                        app["result_text"].value = f"📄 PDF已加载: {len(text)} 字符"
-                        page.update()
-                        return
-
-                    elif file_ext == '.docx':
-                        text, error = extract_text_from_docx(file_path)
-                        if error:
-                            app["result_text"].value = f"❌ {error}"
-                            page.update()
-                            return
-                        app["file_data"] = text
-                        preview = text[:200] + "..." if len(text) > 200 else text
-                        app["file_display"].content = ft.Column([
-                            ft.Text("📘", size=50),
-                            ft.Text(f"已选择: {file_name}", size=12, color=GREEN),
-                            ft.Text(f"预览: {preview}", size=11, color=GREY_500)
-                        ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=4)
-                        app["result_text"].value = f"📄 DOCX已加载: {len(text)} 字符"
-                        page.update()
-                        return
-
-                    elif file_ext == '.doc':
-                        text, error = extract_text_from_doc(file_path)
-                        if error:
-                            app["result_text"].value = f"❌ {error}"
-                            page.update()
-                            return
-                        if text:
-                            app["file_data"] = text
-                            preview = text[:200] + "..." if len(text) > 200 else text
-                            app["file_display"].content = ft.Column([
-                                ft.Text("📙", size=50),
-                                ft.Text(f"已选择: {file_name}", size=12, color=GREEN),
-                                ft.Text(f"预览: {preview}", size=11, color=GREY_500)
-                            ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=4)
-                            app["result_text"].value = f"📄 DOC已加载: {len(text)} 字符"
-                            page.update()
-                            return
-                        else:
-                            with open(file_path, "rb") as f:
-                                app["file_data"] = base64.b64encode(f.read()).decode()
-                            app["file_display"].content = ft.Column([
-                                ft.Text("📙", size=50),
-                                ft.Text(f"已选择: {file_name} (图片模式)", size=12, color=GREEN),
-                                ft.Text("点击开始解析", size=11, color=GREY_500)
-                            ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=4)
-                            app["result_text"].value = f"📄 DOC已加载 (图片模式)"
-                            page.update()
-                            return
-
-                    elif file_ext == '.txt':
-                        text, error = extract_text_from_txt(file_path)
-                        if error:
-                            app["result_text"].value = f"❌ {error}"
-                            page.update()
-                            return
-                        app["file_data"] = text
-                        preview = text[:200] + "..." if len(text) > 200 else text
-                        app["file_display"].content = ft.Column([
-                            ft.Text("📃", size=50),
-                            ft.Text(f"已选择: {file_name}", size=12, color=GREEN),
-                            ft.Text(f"预览: {preview}", size=11, color=GREY_500)
-                        ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=4)
-                        app["result_text"].value = f"📄 TXT已加载: {len(text)} 字符"
-                        page.update()
-                        return
-
                     else:
                         app["result_text"].value = f"❌ 不支持的文件格式: {file_ext}"
                         page.update()
-
                 except Exception as ex:
                     app["result_text"].value = f"❌ 加载失败: {str(ex)}"
                     page.update()
@@ -510,98 +314,44 @@ def parse_page(page):
         page.overlay.append(picker)
         page.update()
         picker.pick_files(
-            allowed_extensions=["png", "jpg", "jpeg", "bmp", "pdf", "doc", "docx", "txt"],
-            dialog_title="选择文档",
+            allowed_extensions=["png", "jpg", "jpeg", "bmp"],
+            dialog_title="选择图片",
         )
 
     def start_parse(e):
         nonlocal mode_value
-        if not app["file_data"]:
-            app["result_text"].value = "⚠️ 请先上传文档"
+        if not app["image_data"]:
+            app["result_text"].value = "⚠️ 请先上传图片"
             page.update()
             return
 
-        app["result_text"].value = "⏳ 正在解析文档..."
+        app["result_text"].value = "⏳ 正在识别中..."
         page.update()
 
-        file_type = app["file_type"]
-        result_text = ""
-        count = 0
-        type_name = mode_value
-
-        if file_type in ['.png', '.jpg', '.jpeg', '.bmp']:
-            if mode_value == "表格提取":
-                result = baidu_table_ocr(app["file_data"])
-            elif mode_value == "版面分析":
-                result = baidu_layout_analysis(app["file_data"])
-            else:
-                result = baidu_document_analysis(app["file_data"])
-
-            if "error" in result:
-                app["result_text"].value = f"❌ 解析失败: {result['error']}"
-                page.update()
-                return
-
-            if mode_value == "表格提取":
-                tables = result.get("tables_result", {}).get("tables", [])
-                if not tables:
-                    app["result_text"].value = "⚠️ 未检测到表格"
-                    page.update()
-                    return
-                result_text = f"检测到 {len(tables)} 个表格\n"
-                for i, table in enumerate(tables):
-                    result_text += f"\n表格 {i+1}:\n{table.get('body', '')[:200]}..."
-                count = len(tables)
-                type_name = "表格提取"
-
-            elif mode_value == "版面分析":
-                elements = result.get("layout_result", {}).get("elements", [])
-                if not elements:
-                    app["result_text"].value = "⚠️ 未检测到版面元素"
-                    page.update()
-                    return
-                result_text = f"检测到 {len(elements)} 个版面元素\n"
-                for elem in elements[:10]:
-                    result_text += f"\n• {elem.get('type', '未知')}: {elem.get('text', '')[:50]}..."
-                count = len(elements)
-                type_name = "版面分析"
-
-            else:
-                words = [w["words"] for w in result.get("words_result", [])]
-                if not words:
-                    app["result_text"].value = "⚠️ 未识别到文字内容"
-                    page.update()
-                    return
-                result_text = "\n".join(words)
-                count = len(words)
-                type_name = "文档解析"
-
+        # 调用百度API
+        if mode_value == "高精度":
+            result = baidu_document_analysis(app["image_data"])
         else:
-            text = app["file_data"]
-            if isinstance(text, str):
-                lines = text.split('\n')
-                count = len([l for l in lines if l.strip()])
-                type_name = f"{mode_value}(文本)"
-                if mode_value == "表格提取":
-                    import re
-                    tables = re.findall(r'\|.*\|', text)
-                    if tables:
-                        result_text = f"检测到 {len(tables)} 个表格结构\n\n{text[:800]}"
-                    else:
-                        result_text = f"文本内容 ({len(text)} 字符)\n\n{text[:800]}"
-                else:
-                    result_text = f"文本内容 ({len(text)} 字符)\n\n{text[:800]}"
-            else:
-                app["result_text"].value = "❌ 无法处理该文件内容"
-                page.update()
-                return
+            result = baidu_document_analysis(app["image_data"])
 
-        # 显示结果
-        display_text = f"✅ 解析成功! ({count}个元素)\n\n{result_text}"
-        app["result_text"].value = display_text
+        if "error" in result:
+            app["result_text"].value = f"❌ 识别失败: {result['error']}"
+            page.update()
+            return
+
+        words = [w["words"] for w in result.get("words_result", [])]
+        if not words:
+            app["result_text"].value = "⚠️ 未识别到文字"
+            page.update()
+            return
+
+        result_text = "\n".join(words)
+        count = len(words)
+        type_name = f"{mode_value}识别"
+
+        app["result_text"].value = f"✅ 识别成功! ({count}个字)\n\n{result_text}"
         page.update()
 
-        # 保存到历史记录（使用全局列表）
         parse_history.append({
             "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "user": app["user"],
@@ -611,13 +361,12 @@ def parse_page(page):
             "file": app.get("file_name", "未知文件")
         })
 
-        # 刷新所有页面
         refresh_all_pages(page)
 
     return ft.Column([
         ft.Container(
             content=ft.Row([
-                ft.Text("📄 文档解析", size=18, weight=ft.FontWeight.BOLD, color=WHITE)
+                ft.Text("📷 OCR识别", size=18, weight=ft.FontWeight.BOLD, color=WHITE)
             ]),
             padding=ft.padding.symmetric(horizontal=16, vertical=12),
             bgcolor=BLUE
@@ -625,17 +374,16 @@ def parse_page(page):
         ft.Container(
             content=ft.Column([
                 ft.Row([
-                    parse_mode,
+                    mode_text,
                     ft.ElevatedButton("切换模式", on_click=toggle_mode,
                                     style=ft.ButtonStyle(bgcolor=PURPLE, color=WHITE))
                 ], spacing=10),
-                ft.Text("支持: 文档解析 / 表格提取 / 版面分析", size=11, color=GREY_500),
-                ft.Text("支持格式: PDF, DOC, DOCX, TXT, PNG, JPG, BMP", size=10, color=GREY_400),
+                ft.Text("通用模式: 速度快 / 高精度模式: 更准确", size=11, color=GREY_500),
                 ft.Divider(height=4),
-                app["file_display"],
+                app["image_display"],
                 ft.Row([
-                    ft.ElevatedButton("📁 上传文档", on_click=pick_file),
-                    ft.ElevatedButton("🚀 开始解析", on_click=start_parse,
+                    ft.ElevatedButton("📁 选择图片", on_click=pick_image),
+                    ft.ElevatedButton("🚀 开始识别", on_click=start_parse,
                                      style=ft.ButtonStyle(bgcolor=GREEN, color=WHITE))
                 ], alignment=ft.MainAxisAlignment.CENTER, spacing=12),
                 ft.Divider(height=4),
@@ -677,17 +425,17 @@ def history_page(page):
     stats = ft.Row([
         ft.Container(
             content=ft.Column([ft.Text(str(total), size=20, weight=ft.FontWeight.BOLD, color=BLUE),
-                              ft.Text("总解析", size=11, color=GREY_500)]),
+                              ft.Text("总识别", size=11, color=GREY_500)]),
             padding=16, bgcolor=WHITE, border_radius=8, width=80, alignment=ft.alignment.center
         ),
         ft.Container(
             content=ft.Column([ft.Text(str(words), size=20, weight=ft.FontWeight.BOLD, color=GREEN),
-                              ft.Text("总元素", size=11, color=GREY_500)]),
+                              ft.Text("总字数", size=11, color=GREY_500)]),
             padding=16, bgcolor=WHITE, border_radius=8, width=80, alignment=ft.alignment.center
         ),
         ft.Container(
             content=ft.Column([ft.Text(str(len(user_parses)), size=20, weight=ft.FontWeight.BOLD, color=ORANGE),
-                              ft.Text("我的解析", size=11, color=GREY_500)]),
+                              ft.Text("我的识别", size=11, color=GREY_500)]),
             padding=16, bgcolor=WHITE, border_radius=8, width=80, alignment=ft.alignment.center
         ),
     ], alignment=ft.MainAxisAlignment.SPACE_EVENLY)
@@ -704,7 +452,7 @@ def history_page(page):
                                    bgcolor=BLUE, border_radius=8)
                     ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                     ft.Text(f"📄 {h.get('file', '')} | {h['text']}", size=13),
-                    ft.Text(f"元素数: {h['count']} | 用户: {h.get('user', '')}", size=11, color=GREY_500)
+                    ft.Text(f"字数: {h['count']} | 用户: {h.get('user', '')}", size=11, color=GREY_500)
                 ], spacing=4),
                 padding=10, bgcolor=WHITE, border_radius=8, margin=ft.margin.symmetric(vertical=3)
             ))
@@ -713,7 +461,7 @@ def history_page(page):
         list_view = ft.Container(
             content=ft.Column([
                 ft.Text("📭", size=60),
-                ft.Text("暂无解析记录", size=16, color=GREY_400)
+                ft.Text("暂无识别记录", size=16, color=GREY_400)
             ], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
             expand=True, alignment=ft.alignment.center
         )
@@ -721,7 +469,7 @@ def history_page(page):
     return ft.Column([
         ft.Container(
             content=ft.Row([
-                ft.Text("📊 解析历史", size=18, weight=ft.FontWeight.BOLD, color=WHITE),
+                ft.Text("📊 识别历史", size=18, weight=ft.FontWeight.BOLD, color=WHITE),
                 ft.Container(expand=True),
                 ft.TextButton("🗑 清除", on_click=clear_all, style=ft.ButtonStyle(color=WHITE))
             ]),
@@ -756,7 +504,7 @@ def settings_page(page):
                 ft.Text("基于百度AI PaddleOCR", size=13, color=GREY_600),
                 ft.Text("版本 1.0", size=12, color=GREY_500),
                 ft.Text("智能交互技术 大作业", size=12, color=GREY_500),
-                ft.Text("支持 PDF / DOC / DOCX / TXT / PNG / JPG", size=12, color=GREY_500),
+                ft.Text("支持 PNG / JPG / BMP", size=12, color=GREY_500),
             ], spacing=4, horizontal_alignment=ft.CrossAxisAlignment.CENTER),
             actions=[ft.TextButton("关闭", on_click=lambda e: setattr(dialog, 'open', False) or page.update())],
         )
@@ -784,8 +532,8 @@ def settings_page(page):
                 ft.Container(
                     content=ft.Column([
                         ft.Text("📖 使用帮助", size=14, weight=ft.FontWeight.BOLD),
-                        ft.Text("支持格式: PDF, DOC, DOCX, TXT, PNG, JPG, BMP", size=12, color=GREY_600),
-                        ft.Text("1. 上传文档 2. 选择模式 3. 开始解析", size=12, color=GREY_600),
+                        ft.Text("支持格式: PNG, JPG, BMP", size=12, color=GREY_600),
+                        ft.Text("1. 选择图片 2. 切换模式 3. 开始识别", size=12, color=GREY_600),
                     ], spacing=4),
                     padding=16, bgcolor=WHITE, border_radius=8, ink=True,
                 ),
@@ -812,7 +560,6 @@ def profile_page(page):
         page.update()
 
     info = users_db.get(app["user"], {})
-    # 从全局 parse_history 中统计当前用户的解析次数
     user_parses = [h for h in parse_history if h.get("user") == app["user"]]
     count = len(user_parses)
     total_words = sum(h.get("count", 0) for h in user_parses)
@@ -835,8 +582,8 @@ def profile_page(page):
                         ),
                         ft.Text(f"👤 {app['user']}", size=22, weight=ft.FontWeight.BOLD),
                         ft.Text(f"昵称: {info.get('nickname', '未设置')}", size=14, color=GREY_600),
-                        ft.Text(f"📄 文档解析次数: {count} 次", size=13, color=GREY_600),
-                        ft.Text(f"📝 提取元素总数: {total_words} 个", size=13, color=GREY_600),
+                        ft.Text(f"📷 识别次数: {count} 次", size=13, color=GREY_600),
+                        ft.Text(f"📝 识别字数: {total_words} 个", size=13, color=GREY_600),
                         ft.Text(f"账号类型: {'管理员' if app['user'] == 'admin' else '普通用户'}", size=13, color=GREY_600),
                         ft.Divider(height=12),
                         ft.ElevatedButton("🚪 退出登录", on_click=logout,
@@ -931,7 +678,6 @@ def login_page(page):
     )
 
 
-# ========== Tab切换 ==========
 def switch_tab(page, index):
     tabs = [app["home"], app["parse"], app["history"], app["profile"], app["settings"]]
     app["container"].content = tabs[index]
@@ -949,7 +695,6 @@ def switch_tab(page, index):
     page.update()
 
 
-# ========== 主页面 ==========
 def main_page_view(page):
     app["home"] = home_page(page)
     app["parse"] = parse_page(page)
@@ -957,8 +702,8 @@ def main_page_view(page):
     app["profile"] = profile_page(page)
     app["settings"] = settings_page(page)
 
-    app["nav_icons"] = ["🏠", "📄", "📊", "👤", "⚙️"]
-    app["nav_labels"] = ["首页", "解析", "历史", "我的", "设置"]
+    app["nav_icons"] = ["🏠", "📷", "📊", "👤", "⚙️"]
+    app["nav_labels"] = ["首页", "OCR", "历史", "我的", "设置"]
 
     def make_nav_btn(index, icon, label, active=False):
         return ft.Container(
@@ -974,7 +719,7 @@ def main_page_view(page):
 
     app["nav_buttons"] = [
         make_nav_btn(0, "🏠", "首页", True),
-        make_nav_btn(1, "📄", "解析"),
+        make_nav_btn(1, "📷", "OCR"),
         make_nav_btn(2, "📊", "历史"),
         make_nav_btn(3, "👤", "我的"),
         make_nav_btn(4, "⚙️", "设置"),
@@ -992,7 +737,6 @@ def main_page_view(page):
     page.add(ft.Column([app["container"], nav_bar], spacing=0, expand=True))
 
 
-# ========== 启动 ==========
 def main(page: ft.Page):
     app["page"] = page
     page.title = "智能文档解析APP"
@@ -1002,7 +746,6 @@ def main(page: ft.Page):
     page.window.width = 400
     page.window.height = 780
     page.window.resizable = True
-
     login_page(page)
 
 

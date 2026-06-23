@@ -20,11 +20,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install flet
-          pip install requests PyPDF2 python-docx
+          pip install requests
 
       - name: Build APK with Flet
         run: |
-          flet build apk --name "智能文档解析" --android-package-name com.example.fletapp --verbose
+          flet build apk --name "智能文档解析" --android-package-name com.example.fletapp
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
