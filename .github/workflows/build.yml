@@ -24,7 +24,7 @@ jobs:
 
       - name: Build APK with Flet
         run: |
-          flet build apk --name "智能文档解析" --android-package-name com.example.fletapp
+          flet build apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
