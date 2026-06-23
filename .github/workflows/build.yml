@@ -14,15 +14,17 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.10'
 
       - name: Install dependencies
         run: |
-          pip install flet requests PyPDF2 python-docx
+          python -m pip install --upgrade pip
+          pip install flet
+          pip install requests PyPDF2 python-docx
 
       - name: Build APK with Flet
         run: |
-          flet build apk --name "智能文档解析" --android-package-name com.example.fletapp
+          flet build apk --name "智能文档解析" --android-package-name com.example.fletapp --verbose
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
