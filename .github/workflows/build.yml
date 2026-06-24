@@ -24,7 +24,7 @@ jobs:
 
       - name: Build APK with Flet
         run: |
-          flet build apk --module-name main --yes --target-platforms android-arm64
+          flet build apk --module-name main --yes
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
