@@ -1,0 +1,88 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    
+    - name: Cache pip packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flet flet-cli requests PyPDF2 python-docx
+    
+    - name: Create build.yaml
+      run: |
+        cat > build.yaml << 'EOF'
+        name: 智能文档解析APP
+        version: 1.0.0
+        description: 基于百度AI的智能文档解析、图像识别和语音合成应用
+        
+        android:
+          package_name: com.smartdoc.app
+          icon: assets/icon.png
+          permissions:
+            - android.permission.INTERNET
+            - android.permission.READ_EXTERNAL_STORAGE
+            - android.permission.WRITE_EXTERNAL_STORAGE
+            - android.permission.CAMERA
+          min_sdk_version: 21
+          target_sdk_version: 33
+          main_activity: main.py
+        
+        dependencies:
+          - requests
+          - PyPDF2
+          - python-docx
+        
+        main: main.py
+        EOF
+    
+    - name: Build APK with Flet
+      run: |
+        flet build apk --build-version 1.0.0
+    
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: SmartDoc-APP-${{ github.sha }}
+        path: |
+          build/apk/*.apk
+          build/app/outputs/flutter-apk/*.apk
+        if-no-files-found: ignore
+    
+    - name: Create Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          build/apk/*.apk
+          build/app/outputs/flutter-apk/*.apk
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

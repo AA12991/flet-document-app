@@ -1,0 +1,17 @@
+name: 智能文档解析APP
+version: 1.0.0
+description: 基于百度AI的智能文档解析、图像识别和语音合成应用
+
+android:
+  package_name: com.smartdoc.app
+  icon: assets/icon.png
+  permissions:
+    - android.permission.INTERNET
+    - android.permission.READ_EXTERNAL_STORAGE
+    - android.permission.WRITE_EXTERNAL_STORAGE
+    - android.permission.CAMERA
+  min_sdk_version: 21
+  target_sdk_version: 33
+  main_activity: main.py
+
+main: main.py
